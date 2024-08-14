@@ -1,4 +1,8 @@
-use std::{borrow::Cow, path::PathBuf, sync::Arc};
+use std::{
+    borrow::Cow,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use bytes::Bytes;
 
@@ -122,12 +126,21 @@ impl<'a> Builder<'a> {
         self.assets.push(EntryBuilder {
             kind: EntryBuilderKind::Glob {
                 http_prefix: http_path.into(),
-                files: glob.files.iter().map(|f| GlobFile {
+                files: glob
+                    .files
+                    .iter()
+                    .map(|f| {
+                        GlobFile {
                     // This should never be `None`
-                    suffix: f.path.strip_prefix(&split_glob.prefix)
-                        .expect("embedded file path does not start with glob prefix"),
+                            suffix: Path::new(f.path)
+                                .strip_prefix(split_glob.prefix)
+                                .expect("embedded file path does not start with glob prefix")
+                                .to_str()
+                                .expect("embedded file path contains invalid UTF-8 characters"),
                     source: f.data_source(),
-                }).collect(),
+                        }
+                    })
+                    .collect(),
                 glob: split_glob,
                 #[cfg(dev_mode)]
                 base_path: glob.base_path,
